@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>罪犯扣分预警系统</title>
+    <!-- Favicon设置 -->
+    <link rel="icon" href="asset/images/icon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="asset/images/icon.ico" type="image/x-icon">
+    <link rel="icon" href="asset/images/icon.ico" sizes="16x16" type="image/x-icon">
+    <link rel="icon" href="asset/images/icon.ico" sizes="32x32" type="image/x-icon">
+    <link rel="apple-touch-icon" href="asset/images/icon.ico">
+    <meta name="msapplication-TileImage" content="asset/images/icon.ico">
+    <meta name="theme-color" content="#1e40af">
+    <!-- 强制刷新favicon -->
+    <script>
+        // 强制刷新favicon
+        setTimeout(function() {
+            var link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+            link.type = 'image/x-icon';
+            link.rel = 'shortcut icon';
+            link.href = 'asset/images/icon.ico?' + new Date().getTime();
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }, 100);
+    </script>
+    <!-- 外部 CSS 样式 -->
+    <link rel="stylesheet" href="asset/css/style.css">
+    
+    <!-- 兼容性提示 -->
+    <!--[if lt IE 9]>
+    <script src="https://cdn.jsdelivr.net/npm/es5-shim@4.5.15/es5-shim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/es5-shim@4.5.15/es5-sham.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/html5shiv.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/respond@1.4.2/dest/respond.min.js"></script>
+    <![endif]-->
+    
+    <!-- 兼容性处理 -->
+    <script>
+        // 为低版本浏览器添加兼容性支持
+        (function() {
+            // 添加 Array.includes 的 polyfill
+            if (!Array.prototype.includes) {
+                Array.prototype.includes = function(searchElement) {
+                    for (var i = 0; i < this.length; i++) {
+                        if (this[i] === searchElement) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+            }
+            
+            // 添加 String.includes 的 polyfill
+            if (!String.prototype.includes) {
+                String.prototype.includes = function(search, start) {
+                    if (typeof start !== 'number') {
+                        start = 0;
+                    }
+                    if (start + search.length > this.length) {
+                        return false;
+                    } else {
+                        return this.indexOf(search, start) !== -1;
+                    }
+                };
+            }
+            
+            // 添加 Object.keys 的 polyfill
+            if (!Object.keys) {
+                Object.keys = (function() {
+                    var hasOwnProperty = Object.prototype.hasOwnProperty,
+                        hasDontEnumBug = !({ toString: null }).propertyIsEnumerable('toString'),
+                        dontEnums = ['toString', 'toLocaleString', 'valueOf', 'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'constructor'],
+                        dontEnumsLength = dontEnums.length;
+                    return function(obj) {
+                        if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
+                            throw new TypeError('Object.keys called on non-object');
+                        }
+                        var result = [], prop, i;
+                        for (prop in obj) {
+                            if (hasOwnProperty.call(obj, prop)) {
+                                result.push(prop);
+                            }
+                        }
+                        if (hasDontEnumBug) {
+                            for (i = 0; i < dontEnumsLength; i++) {
+                                if (hasOwnProperty.call(obj, dontEnums[i])) {
+                                    result.push(dontEnums[i]);
+                                }
+                            }
+                        }
+                        return result;
+                    };
+                }());
+            }
+        })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="admin-toggle">
+                <button class="visitor-btn" onclick="showLoginForm()" id="loginBtn">管理员登录</button>
+                <button class="admin-btn" onclick="logout()" id="logoutBtn" style="display: none;">退出管理员</button>
+            </div>
+            <div class="header-content">
+                <img src="asset/images/icon.ico" alt="系统图标" class="header-icon">
+                <h1>罪犯扣分预警系统</h1>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab visitor-only" onclick="switchTab('analysis')">
+                考核期扣分
+            </button>
+            <button class="tab visitor-only" onclick="switchTab('waiting')">
+                等待裁定扣分
+            </button>
+            <button class="tab visitor-only" onclick="switchTab('screening')">
+                减刑筛查数据
+            </button>
+            <button class="tab visitor-only" onclick="switchTab('score')">
+                加扣分公示表
+            </button>
+            <button class="tab admin-only" onclick="switchTab('upload')">
+                文件上传转换
+            </button>
+        </div>
+
+        <!-- 考核期扣分标签页 -->
+        <div id="analysis-tab" class="tab-content visitor-only">
+            <div class="visitor-notice visitor-only" id="visitorNotice">
+                <div class="notice-content">
+                    <strong>访客模式：</strong>您当前以访客身份访问系统，只能查看数据。如需进入管理功能，请联系管理员获取权限。
+                    <div class="countdown-timer" id="countdownTimer" style="font-size: 0.9em; color: #666; margin-top: 5px;">
+                        <span id="countdownText">6秒后自动关闭</span>
+                    </div>
+                </div>
+                <button class="close-btn" onclick="closeVisitorNotice()" title="关闭提示">×</button>
+            </div>
+            <div class="search-section" style="margin: 4px 0;">
+                <h4 style="margin-bottom: 3px; color: #1e3a8a; font-size: 0.8em;">分析参数设置</h4>
+                <div class="search-row" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                    <div class="search-item" style="display: flex; align-items: center; gap: 6px; min-width: 300px;">
+                        <label style="margin: 0; white-space: nowrap; font-size: 0.9em;">分析时间段</label>
+                        <select id="timeRangeType" onchange="updateTimeRangeDescription()" style="flex: 1; min-width: 200px;">
+                            <option value="recent">近半年（当前日期往前半年）</option>
+                            <option value="qualification">考核期止日前半年（考核期止日往前半年）</option>
+                        </select>
+                    </div>
+                    <div class="search-item" style="display: flex; align-items: center; gap: 6px; min-width: 200px;">
+                        <label style="margin: 0; white-space: nowrap; font-size: 0.9em;">筛选条件</label>
+                        <select id="filterCondition" onchange="updateTimeRangeDescription(); toggleTableColumns();" style="flex: 1; min-width: 150px;">
+                            <option value="count2">扣分次数 ≥ 2次</option>
+                            <option value="count1">扣分次数 = 1次</option>
+                            <option value="lifesentence">余刑为无期</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="timeRangeDescription" style="margin-top: 4px; padding: 4px; background: #dbeafe; border-radius: 2px; color: #1e3a8a; font-size: 10px;">
+                    将分析近半年（当前日期往前半年）内扣分次数大于等于2次的人员
+                </div>
+            </div>
+
+            <div id="analysis-content" style="display: none;">
+                <div class="stats">
+                    <div class="stat-card" style="text-align: center;">
+                        <h3 id="analysisDeductionLabel" style="margin-bottom: 2px; font-size: 18px;">扣分次数≥2次人数</h3>
+                        <div class="stat-card number" id="analysisDeduction" style="font-size: 24px;">0</div>
+                    </div>
+                </div>
+
+
+
+
+                <div class="export-buttons admin-only">
+                    <button class="btn btn-success" onclick="exportAnalysisData()">📥 导出分析结果</button>
+                    <button class="btn btn-success" onclick="exportAnalysisReport()">📊 导出分析报告</button>
+                </div>
+
+                <div id="analysisTableContainer">
+                    <table class="data-table" id="analysisTable">
+                        <colgroup>
+                            <col style="width: 60px;">  <!-- 序号 -->
+                            <col style="width: 80px;">  <!-- 姓名 -->
+                            <col style="width: 100px;"> <!-- 囚号 -->
+                            <col class="crime-column" style="display: none; width: 180px;"> <!-- 罪名 -->
+                            <col style="width: 150px;"> <!-- 分析时间段 -->
+                            <col style="width: 100px;"> <!-- 总扣分 -->
+                            <col style="width: 120px;"> <!-- 扣分记录数 -->
+                            <col style="width: 180px;"> <!-- 减刑推测结论 -->
+                            <col style="width: 150px;"> <!-- 备注 -->
+                            <col style="width: 80px;">  <!-- 操作 -->
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>姓名</th>
+                                <th>囚号</th>
+                                <th class="crime-column" style="display: none;">罪名</th>
+                                <th>分析时间段</th>
+                                <th>总扣分</th>
+                                <th>扣分记录数</th>
+                                <th>减刑推测结论</th>
+                                <th>备注</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analysisTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制区域 -->
+                <div class="pagination" id="analysisPagination">
+                    <button onclick="prevAnalysisPage()" id="prevAnalysisBtn">上一页</button>
+                    <span id="analysisPageInfo">第 1 页，共 1 页</span>
+                    <button onclick="nextAnalysisPage()" id="nextAnalysisBtn">下一页</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 文件管理标签页（管理员专用） -->
+        <div id="upload-tab" class="tab-content admin-only">
+            <div class="file-upload-section">
+                <h4 style="margin-bottom: 6px; color: #1e3a8a; font-size: 1.1em; font-weight: 600;">📁 文件上传转换</h4>
+                <p style="margin-bottom: 12px; color: #64748b; font-size: 0.9em;">
+                    支持上传Excel文件(.xlsx/.xls)，系统将自动识别文件类型并转换为JSON格式
+                </p>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;">
+                    <label for="screeningFile" class="file-label">
+                        上传减刑筛查文件
+                        <input type="file" id="screeningFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileUpload('screening', this)">
+                    </label>
+                    
+                    <label for="scoreFile" class="file-label">
+                        上传加扣分文件
+                        <input type="file" id="scoreFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileUpload('score', this)">
+                    </label>
+                    
+                    <label for="recommendationFile" class="file-label">
+                        上传推荐榜文件
+                        <input type="file" id="recommendationFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileUpload('recommendation', this)">
+                    </label>
+                    
+                    <label for="remainingFile" class="file-label">
+                        上传余刑文件
+                        <input type="file" id="remainingFile" class="file-input" accept=".xlsx,.xls" onchange="handleFileUpload('remaining', this)">
+                    </label>
+                </div>
+                
+                <div id="uploadResults" style="margin-top: 15px; display: none;">
+                    <h5 style="color: #1e3a8a; margin-bottom: 10px; font-size: 1em;">转换结果：</h5>
+                    <div id="convertedFiles" style="padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                        <!-- 转换结果将在这里显示 -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 数据导出功能 -->
+            <div class="search-section" style="background: #f8f8f8; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                <h4 style="margin-bottom: 8px; color: #1e3a8a; font-size: 0.95em;">📤 数据导出</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 5px; margin-bottom: 5px;">
+                    <button class="btn btn-success" onclick="exportScreeningData()" style="font-size: 0.85em; padding: 6px;">筛查CSV</button>
+                    <button class="btn btn-info" onclick="exportScreeningJSON()" style="font-size: 0.85em; padding: 6px;">筛查JSON</button>
+                    <button class="btn btn-success" onclick="exportScoreData()" style="font-size: 0.85em; padding: 6px;">加扣分CSV</button>
+                    <button class="btn btn-info" onclick="exportScoreJSON()" style="font-size: 0.85em; padding: 6px;">加扣分JSON</button>
+                    <button class="btn btn-success" onclick="exportRecommendationData()" style="font-size: 0.85em; padding: 6px;">推荐CSV</button>
+                    <button class="btn btn-info" onclick="exportRecommendationJSON()" style="font-size: 0.85em; padding: 6px;">推荐JSON</button>
+                    <button class="btn btn-success" onclick="exportRemainingData()" style="font-size: 0.85em; padding: 6px;">余刑CSV</button>
+                    <button class="btn btn-info" onclick="exportRemainingJSON()" style="font-size: 0.85em; padding: 6px;">余刑JSON</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 5px;">
+                    <button class="btn btn-primary" onclick="exportAnalysisData()" style="font-size: 0.85em; padding: 6px;">分析结果</button>
+                    <button class="btn btn-primary" onclick="exportAnalysisReport()" style="font-size: 0.85em; padding: 6px;">分析报告</button>
+                    <button class="btn btn-warning" onclick="exportWaitingData()" style="font-size: 0.85em; padding: 6px;">等待裁定</button>
+                </div>
+            </div>
+            
+            <div class="search-section" style="background: #f8f8f8; padding: 10px; border-radius: 5px;">
+                <h4 style="margin-bottom: 6px; color: #1e3a8a; font-size: 0.95em;">支持的文件类型</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+                    <div style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                        <strong style="font-size: 0.9em;">减刑筛查文件</strong><br>
+                        <small style="font-size: 0.8em;">包含姓名、囚号、减刑相关字段</small>
+                    </div>
+                    <div style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                        <strong style="font-size: 0.9em;">加扣分文件</strong><br>
+                        <small style="font-size: 0.8em;">包含罪犯编号、姓名、分值等字段</small>
+                    </div>
+                    <div style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                        <strong style="font-size: 0.9em;">推荐榜文件</strong><br>
+                        <small style="font-size: 0.8em;">包含减刑假释推荐相关数据</small>
+                    </div>
+                    <div style="padding: 8px; border-radius: 5px; border: 1px solid #ddd;">
+                        <strong style="font-size: 0.9em;">余刑文件</strong><br>
+                        <small style="font-size: 0.8em;">包含剩余刑期相关数据</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 等待裁定扣分标签页 -->
+        <div id="waiting-tab" class="tab-content visitor-only">
+            <div class="search-section" style="margin: 3px 0;">
+                <h4 style="margin-bottom: 2px; color: #1e3a8a; font-size: 0.8em;">等待裁定扣分分析</h4>
+                <div class="search-row">
+                    <div class="search-item" style="display: flex; align-items: center; gap: 8px;">
+                        <label style="margin: 0; white-space: nowrap;">分析申报月份</label>
+                        <select id="waitingMonth" onchange="updateWaitingDescription()" style="flex: 1; min-width: 120px;">
+                            <option value="2025-12">2025年12月</option>
+                            <option value="2025-10">2025年10月</option>
+                            <option value="2025-08">2025年08月</option>
+                            <option value="2025-06">2025年06月</option>
+                            <option value="2025-04" selected>2025年04月</option>
+                            <option value="2025-02">2025年02月</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="waitingDescription" style="margin-top: 2px; padding: 2px 4px; background: #dbeafe; border-radius: 2px; color: #1e3a8a; font-size: 12px;">
+                    将分析2025年04月减刑假释推荐表中人员在该月份之后6个月内的扣分情况
+                </div>
+            </div>
+
+            <div id="waiting-content" style="display: none;">
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>推荐人员总数</h3>
+                        <div class="stat-card number" id="waitingTotal">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>有扣分记录人数</h3>
+                        <div class="stat-card number" id="waitingDeduction">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>扣分人员占比</h3>
+                        <div class="stat-card number" id="waitingPercentage">0%</div>
+                    </div>
+                </div>
+
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <colgroup>
+                            <col style="width: 60px;">  <!-- 序号 -->
+                            <col style="width: 80px;">  <!-- 姓名 -->
+                            <col style="width: 100px;"> <!-- 囚号 -->
+                            <col style="width: 150px;"> <!-- 分监区 -->
+                            <col style="width: 180px;"> <!-- 分析时间段 -->
+                            <col style="width: 120px;"> <!-- 6个月内扣分次数 -->
+                            <col style="width: 80px;">  <!-- 总扣分 -->
+                            <col style="width: 120px;"> <!-- 扣分详情 -->
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>姓名</th>
+                                <th>囚号</th>
+                                <th>分监区</th>
+                                <th>分析时间段</th>
+                                <th>6个月内扣分次数</th>
+                                <th>总扣分</th>
+                                <th>扣分详情</th>
+                            </tr>
+                        </thead>
+                        <tbody id="waitingTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制区域 -->
+                <div class="pagination" id="waitingPagination">
+                    <button onclick="prevWaitingPage()" id="prevWaitingBtn">上一页</button>
+                    <span id="waitingPageInfo">第 1 页，共 1 页</span>
+                    <button onclick="nextWaitingPage()" id="nextWaitingBtn">下一页</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 减刑筛查数据标签页 -->
+        <div id="screening-tab" class="tab-content visitor-only">
+
+            <div id="screening-content" style="display: none;">
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>总记录数</h3>
+                        <div class="stat-card number" id="screeningTotal">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>符合减刑条件</h3>
+                        <div class="stat-card number" id="screeningEligible">0</div>
+                    </div>
+                </div>
+
+                <div class="search-section">
+                    <div class="search-row" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+                        <div class="search-item" style="display: flex; align-items: center; gap: 6px; min-width: 200px;">
+                            <label style="margin: 0; white-space: nowrap; font-size: 0.9em;">姓名/囚号</label>
+                            <input type="text" id="screeningSearch" placeholder="输入姓名、囚号或姓名首字母" oninput="debouncedFilterScreeningData()" style="flex: 1; min-width: 120px;">
+                        </div>
+                        <div class="search-item" style="display: flex; align-items: center; gap: 6px; min-width: 150px;">
+                            <label style="margin: 0; white-space: nowrap; font-size: 0.9em;">罪名</label>
+                            <select id="screeningCrime" onchange="filterScreeningData()" style="flex: 1; min-width: 100px;">
+                                <option value="">全部罪名</option>
+                            </select>
+                        </div>
+                        <div class="search-item" style="display: flex; align-items: center; gap: 6px; min-width: 150px;">
+                            <label style="margin: 0; white-space: nowrap; font-size: 0.9em;">减刑推测结论</label>
+                            <select id="screeningConclusion" onchange="filterScreeningData()" style="flex: 1; min-width: 100px;">
+                                <option value="">全部结论</option>
+                                <option value="符合申报条件">符合申报条件</option>
+                                <option value="立即启动">立即启动</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div class="search-item button-group" style="margin: auto; display: flex; align-items: center; justify-content: center; padding: 8px;">
+                            <button class="btn btn-secondary" onclick="resetScreeningFilters()" style="padding: 8px 16px; font-size: 1em;">🔄 重置</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="export-buttons admin-only">
+                    <button class="btn btn-success" onclick="exportScreeningData()">📥 导出数据</button>
+                </div>
+
+                <div id="screeningTableContainer">
+                    <table class="data-table" id="screeningTable">
+                        <colgroup>
+                            <col style="width: 60px;">  <!-- 序号 -->
+                            <col style="width: 80px;">  <!-- 姓名 -->
+                            <col style="width: 100px;"> <!-- 囚号 -->
+                            <col style="width: 180px;"> <!-- 罪名 -->
+                            <col style="width: 100px;"> <!-- 原判刑期 -->
+                            <col style="width: 100px;"> <!-- 减刑次数 -->
+                            <col style="width: 100px;"> <!-- 考核月数 -->
+                            <col style="width: 180px;"> <!-- 减刑推测结论 -->
+                            <col style="width: 150px;"> <!-- 备注 -->
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>姓名</th>
+                                <th>囚号</th>
+                                <th>罪名</th>
+                                <th>原判刑期</th>
+                                <th>减刑次数</th>
+                                <th>考核月数</th>
+                                <th>减刑推测结论</th>
+                                <th>备注</th>
+                            </tr>
+                        </thead>
+                        <tbody id="screeningTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制区域 -->
+                <div class="pagination" id="screeningPagination">
+                    <button onclick="prevScreeningPage()" id="prevScreeningBtn">上一页</button>
+                    <span id="screeningPageInfo">第 1 页，共 1 页</span>
+                    <button onclick="nextScreeningPage()" id="nextScreeningBtn">下一页</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加扣分公示表标签页 -->
+        <div id="score-tab" class="tab-content visitor-only">
+
+            <div id="score-content" style="display: none;">
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>总记录数</h3>
+                        <div class="stat-card number" id="scoreTotal">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>扣分记录</h3>
+                        <div class="stat-card number" id="scoreDeduction">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>涉及罪犯数</h3>
+                        <div class="stat-card number" id="scorePrisoners">0</div>
+                    </div>
+                </div>
+
+                <div class="search-section">
+                    <div class="search-row">
+                        <div class="search-item">
+                            <label>罪犯编号/姓名</label>
+                            <input type="text" id="scoreSearch" placeholder="输入编号、姓名或姓名首字母" oninput="debouncedFilterScoreData()">
+                        </div>
+                        <div class="search-item">
+                            <label>所属分监区</label>
+                            <select id="scorePrison" onchange="filterScoreData()">
+                                <option value="">全部分监区</option>
+                            </select>
+                        </div>
+                        <div class="search-item">
+                            <label>扣分类别</label>
+                            <select id="scoreCategory" onchange="filterScoreData()">
+                                <option value="">全部类别</option>
+                            </select>
+                        </div>
+                        <div class="search-item" style="min-width: 200px;">
+                            <label>创建时间</label>
+                            <input type="date" id="scoreDateFrom" style="width: 60%;" onchange="validateScoreDateRange(); filterScoreData()">
+                            <span>至</span>
+                            <input type="date" id="scoreDateTo" style="width: 60%;" onchange="validateScoreDateRange(); filterScoreData()">
+                        </div>
+                        <div class="search-item" style="min-width: 180px;">
+                            <label>扣分分值</label>
+                            <input type="number" id="scoreValueMin" placeholder="最小值" style="width: 48%;" oninput="debouncedFilterScoreData()">
+                            <span>至</span>
+                            <input type="number" id="scoreValueMax" placeholder="最大值" style="width: 48%;" oninput="debouncedFilterScoreData()">
+                        </div>
+                        <div class="search-item button-group">
+                            <button class="btn btn-secondary" onclick="resetScoreFilters()">🔄 重置</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="export-buttons admin-only">
+                    <button class="btn btn-success" onclick="exportScoreData()">📥 导出数据</button>
+                </div>
+
+                <div id="scoreTableContainer">
+                    <table class="data-table" id="scoreTable">
+                        <colgroup>
+                            <col style="width: 60px;">  <!-- 序号 -->
+                            <col style="width: 100px;"> <!-- 罪犯编号 -->
+                            <col style="width: 80px;">  <!-- 罪犯姓名 -->
+                            <col style="width: 100px;"> <!-- 所属分监区 -->
+                            <col style="width: 120px;"> <!-- 创建时间 -->
+                            <col style="width: 200px;"> <!-- 事实 -->
+                            <col style="width: 80px;">  <!-- 类型 -->
+                            <col style="width: 80px;">  <!-- 类别 -->
+                            <col style="width: 60px;">  <!-- 分值 -->
+                            <col style="width: 80px;">  <!-- 创建人 -->
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>罪犯编号</th>
+                                <th>罪犯姓名</th>
+                                <th>所属分监区</th>
+                                <th>创建时间</th>
+                                <th>事实</th>
+                                <th>类型</th>
+                                <th>类别</th>
+                                <th>分值</th>
+                                <th>创建人</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scoreTableBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页控制区域 -->
+                <div class="pagination" id="scorePagination">
+                    <button onclick="prevScorePage()" id="prevScoreBtn">上一页</button>
+                    <span id="scorePageInfo">第 1 页，共 1 页</span>
+                    <button onclick="nextScorePage()" id="nextScoreBtn">下一页</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- 引用XLSX库用于Excel文件处理 -->
+    <script src="xlsx.full.min.js"></script>
+    
+    <!-- 引入外部JavaScript模块 -->
+    <script src="asset/js/common.js"></script>
+    <script src="asset/js/analysis-tab.js"></script>
+    <script src="asset/js/waiting-tab.js"></script>
+    <script src="asset/js/screening-tab.js"></script>
+    <script src="asset/js/score-tab.js"></script>
+    
+    <!-- 加载余刑数据 -->
+    <script src="asset/js/load-data.js"></script>
+
+    <script>
+        // 初始化 - 页面加载完成后自动加载数据
+        document.addEventListener('DOMContentLoaded', function() {
+            autoLoadAllData();
+        });
+    </script>
+
+    <!-- 登录表单 -->
+    <div id="loginForm" class="login-form">
+        <h3>管理员登录</h3>
+        <input type="text" id="username" placeholder="用户名" value="admin" onkeydown="handleLoginKeyPress(event)">
+        <input type="password" id="password" placeholder="密码" value="admin123" onkeydown="handleLoginKeyPress(event)">
+        <button onclick="login()">登录</button>
+        <button onclick="hideLoginForm()" class="cancel-btn">取消</button>
+    </div>
+
+    <!-- 退出提示弹窗 -->
+    <div id="logoutMessage" class="logout-message" style="display: none;">
+        <div class="logout-content">
+            <div class="logout-icon">✓</div>
+            <h3>已退出管理员模式</h3>
+            <p>您已成功退出管理员模式，现在以访客身份访问系统。</p>
+            <button onclick="closeLogoutMessage()">确定</button>
+        </div>
+    </div>
+
+    <script>
+        // 处理登录表单的回车键
+        function handleLoginKeyPress(event) {
+            if (event.key === 'Enter' || event.keyCode === 13) {
+                event.preventDefault(); // 防止默认行为
+                login();
+            }
+        }
+    </script>
+</body>
+</html>
