@@ -2,6 +2,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
 }
 
 body {
@@ -51,6 +52,8 @@ body {
     margin-left: 10px;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     transition: all 0.3s ease;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    touch-action: manipulation;
 }
 
 .visitor-btn {
@@ -231,12 +234,18 @@ body {
     font-weight: 400;
 }
 
-.tabs {
-    display: flex;
+.tabs-wrapper {
     background: #f5f5f5;
     border-bottom: 1px solid #ddd;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tabs {
+    display: flex;
     padding: 0;
     gap: 0;
+    min-width: 100%;
 }
 
 .tab {
@@ -250,6 +259,8 @@ body {
     color: #666;
     border-bottom: 2px solid transparent;
     transition: all 0.2s ease;
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3);
+    touch-action: manipulation; /* 优化触摸响应 */
 }
 
 .tab.active {
@@ -363,6 +374,9 @@ body {
     transition: all 0.3s ease;
     background: white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    -webkit-appearance: none; /* 移除iOS默认样式 */
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .search-item input:focus,
@@ -371,6 +385,11 @@ body {
     border-color: #3b82f6;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
     transform: translateY(-2px);
+}
+
+.search-item input:focus {
+    -webkit-user-select: text;
+    user-select: text;
 }
 
 
@@ -386,6 +405,10 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC', 'Hiragino Sans GB', 'WenQuanYi Micro Hei', sans-serif;
     letter-spacing: 0.3px;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    touch-action: manipulation; /* 优化触摸响应 */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 /* 按钮样式统一 */
@@ -627,86 +650,371 @@ body {
     margin-bottom: 5px;
 }
 
+/* 移动端优化样式 */
 @media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+    
     .container {
-        margin: 10px;
-        border-radius: 20px;
+        margin: 5px auto;
+        border-radius: 15px;
+        max-width: 100%;
     }
     
     .header {
-        padding: 30px;
-        text-align: center;
-    }
-    
-    .header-content {
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .header-icon {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .header-icon:hover {
-        transform: scale(1.3) scaleY(1.1);
-        z-index: 10;
+        padding: 20px 15px;
+        border-radius: 15px 15px 0 0;
     }
     
     .header h1 {
-        font-size: 1.8em;
+        font-size: 1.2em;
+        margin-bottom: 5px;
     }
     
-    .header::before,
-    .header::after {
-        display: none;
+    .header-icon {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .admin-toggle {
+        position: relative;
+        top: 0;
+        right: 0;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .admin-btn, .visitor-btn {
+        padding: 8px 16px;
+        font-size: 13px;
+        margin: 0 5px;
+    }
+    
+    /* 标签页横向滚动优化 */
+    .tabs-wrapper {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+    
+    .tabs {
+        gap: 2px;
+        padding: 0;
+    }
+    
+    .tab {
+        min-width: 100px;
+        padding: 12px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
     
     .tab-content {
-        padding: 8px;
+        padding: 10px 5px;
+    }
+    
+    /* 搜索区域优化 */
+    .search-section {
+        padding: 8px 5px;
+        margin-bottom: 8px;
     }
     
     .search-row {
         flex-direction: column;
-        padding: 10px 12px;
+        gap: 8px;
+        padding: 8px 10px;
     }
     
     .search-item {
         min-width: 100%;
-        margin-bottom: 8px;
+        margin-bottom: 5px;
     }
     
+    .search-item label {
+        font-size: 0.85em;
+        margin-bottom: 5px;
+    }
+    
+    .search-item input,
+    .search-item select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+    
+    /* 统计卡片优化 */
     .stats {
-        flex-direction: column;
-        gap: 6px;
+        flex-direction: row;
+        gap: 4px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
     }
     
     .stat-card {
-        min-width: 80px;
-        padding: 6px 8px;
-        margin: 0 1px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+        flex: 1 1 calc(50% - 2px);
+        min-width: calc(50% - 2px);
+        padding: 8px 6px;
+        margin: 0;
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .stat-card h3 {
+        font-size: 0.75em;
+        margin-bottom: 2px;
+    }
+    
+    .stat-card .number {
+        font-size: 1.2em;
+        margin-left: 0;
+    }
+    
+    /* 表格优化 */
+    #analysisTableContainer,
+    #screeningTableContainer,
+    #scoreTableContainer {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        position: relative;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        position: relative;
     }
     
     .data-table {
-        font-size: 12px;
-        border-radius: 15px;
+        font-size: 11px;
+        min-width: 800px; /* 确保表格最小宽度 */
     }
     
     .data-table th,
     .data-table td {
-        padding: 6px 8px;
+        padding: 6px 4px;
     }
     
+    .data-table th {
+        font-size: 11px;
+        padding: 8px 4px;
+    }
+    
+    /* 按钮优化 */
     .btn {
-        padding: 10px 20px;
-        font-size: 14px;
+        padding: 10px 16px;
+        font-size: 13px;
+        margin: 3px;
+        min-height: 44px; /* iOS 推荐的最小触摸目标 */
+    }
+    
+    .file-label {
+        padding: 10px 16px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+    
+    /* 分页按钮优化 */
+    .pagination {
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 5px;
     }
     
     .pagination button {
+        padding: 10px 14px;
+        font-size: 13px;
+        min-height: 44px;
+        flex: 1;
+        min-width: 80px;
+    }
+    
+    /* 登录表单优化 */
+    .login-form {
+        width: 90%;
+        min-width: auto;
+        padding: 25px 20px;
+    }
+    
+    .login-form h3 {
+        font-size: 1.1em;
+        margin-bottom: 15px;
+    }
+    
+    .login-form input {
+        padding: 14px;
+        margin: 8px 0;
+        font-size: 16px; /* 防止iOS自动缩放 */
+    }
+    
+    .login-form button {
+        padding: 14px;
+        font-size: 16px;
+        margin: 8px 0;
+    }
+    
+    /* 导出按钮区域优化 */
+    .export-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        justify-content: center;
+        margin-bottom: 8px;
+    }
+    
+    .export-buttons .btn {
+        flex: 1 1 calc(50% - 5px);
+        min-width: calc(50% - 5px);
+    }
+    
+    /* 文件上传区域优化 */
+    .file-upload-section {
+        padding: 10px 5px;
+    }
+    
+    .file-upload-section h4 {
+        font-size: 1em;
+    }
+    
+    .file-upload-section p {
+        font-size: 0.85em;
+    }
+    
+    .file-label {
+        padding: 12px 16px;
+        font-size: 13px;
+        min-height: 50px;
+    }
+    
+    /* 访客通知优化 */
+    .visitor-notice {
+        padding: 15px 10px;
+        margin: 10px 0;
+        font-size: 0.85em;
+    }
+    
+    .visitor-notice .close-btn {
+        font-size: 24px;
+    }
+    
+    /* 模态框优化 */
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    .modal-header {
+        padding: 15px 20px;
+    }
+    
+    .modal-header h2 {
+        font-size: 1.1em;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    /* 扣分详情表格优化 */
+    .deduction-details-table {
+        font-size: 11px;
+    }
+    
+    .deduction-details-table th,
+    .deduction-details-table td {
+        padding: 8px 4px;
+    }
+    
+    /* 文件上传网格优化 */
+    .file-upload-section > div {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+}
+
+/* 超小屏幕优化（宽度小于 480px） */
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.1em;
+    }
+    
+    .header-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .tab {
+        min-width: 80px;
+        padding: 10px 8px;
+        font-size: 11px;
+    }
+    
+    .data-table {
+        font-size: 10px;
+        min-width: 700px;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 5px 3px;
+    }
+    
+    .btn {
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+    
+    .stat-card h3 {
+        font-size: 0.7em;
+    }
+    
+    .stat-card .number {
+        font-size: 1.1em;
+    }
+    
+    .login-form {
+        width: 95%;
+        padding: 20px 15px;
+    }
+    
+    .login-form h3 {
+        font-size: 1em;
+    }
+    
+    .search-item label {
+        font-size: 0.8em;
+    }
+}
+
+/* 横屏优化 */
+@media (max-width: 1024px) and (orientation: landscape) {
+    .header {
+        padding: 15px 20px;
+    }
+    
+    .header h1 {
+        font-size: 1.1em;
+    }
+    
+    .tab {
         padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .stats {
+        flex-direction: row;
+        gap: 6px;
+    }
+    
+    .stat-card {
+        flex: 1;
+        padding: 10px 8px;
+    }
+    
+    .data-table {
         font-size: 12px;
     }
 }
