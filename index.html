@@ -2,7 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
     <title>罪犯扣分预警系统</title>
     <!-- Favicon设置 -->
     <link rel="icon" href="asset/images/icon.ico" type="image/x-icon">
@@ -108,8 +112,9 @@
             </div>
         </div>
 
+        <div class="tabs-wrapper">
         <div class="tabs">
-            <button class="tab visitor-only" onclick="switchTab('analysis')">
+            <button class="tab visitor-only active" onclick="switchTab('analysis')">
                 考核期扣分
             </button>
             <button class="tab visitor-only" onclick="switchTab('waiting')">
@@ -125,6 +130,7 @@
                 文件上传转换
             </button>
         </div>
+    </div>
 
         <!-- 考核期扣分标签页 -->
         <div id="analysis-tab" class="tab-content visitor-only">
